@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chat SQL</title>
+</head>
+<body>
+
+<h2>Chat con Base de Datos</h2>
+
+<div id="chat"></div>
+
+<input id="input" placeholder="Pregunta...">
+<button onclick="enviar()">Enviar</button>
+
+<script>
+async function enviar() {
+    let texto = document.getElementById("input").value;
+
+    let res = await fetch("http://127.0.0.1:8000/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({mensaje: texto})
+    });
+
+    let data = await res.json();
+
+    document.getElementById("chat").innerHTML += `
+        <p><b>Tú:</b> ${texto}</p>
+        <p><b>SQL:</b> ${data.sql}</p>
+        <p><b>Bot:</b><br>${data.respuesta}</p>
+    `;
+}
+</script>
+
+</body>
+</html>
