@@ -14,7 +14,7 @@ def leer_env(ruta):
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_PATH = os.path.join(BASE_DIR, ".env")
 
-api_key = os.getenv("API_KEY")
+api_key = os.getenv("OPENAI_API_KEY")
 
 if not api_key:
     raise ValueError("❌ No se encontró la API Key")
