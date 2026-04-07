@@ -14,12 +14,12 @@ def leer_env(ruta):
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_PATH = os.path.join(BASE_DIR, ".env")
 
-env = leer_env(ENV_PATH)
+api_key = os.getenv("API_KEY")
 
-if not env.api_key:
+if not api_key:
     raise ValueError("❌ No se encontró la API Key")
 
-client = OpenAI(api_key=env.api_key)
+client = OpenAI(api_key=api_key)
 
 SCHEMA = """
 Tabla disponible:
