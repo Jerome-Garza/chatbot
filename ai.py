@@ -1,43 +1,47 @@
 import os
 from openai import OpenAI
+from dotenv import load_dotenv
 
 
-def leer_env(ruta):
-    if not os.path.exists(ruta):
-        raise FileNotFoundError(
-            f"❌ No se encontró el archivo .env en: {ruta}"
-        )
+# =========================================================
+# VARIABLES DE ENTORNO
+# =========================================================
 
-    variables = {}
+# En LOCAL:
+#   Lee las variables desde .env
+#
+# En RAILWAY:
+#   Lee las variables configuradas en Railway
+#
+load_dotenv()
 
-    with open(ruta, "r", encoding="utf-8") as f:
-        for linea in f:
-            linea = linea.strip()
-
-            if not linea or linea.startswith("#"):
-                continue
-
-            if "=" in linea:
-                clave, valor = linea.split("=", 1)
-                variables[clave.strip()] = valor.strip().strip('"').strip("'")
-
-    return variables
+API_KEY = os.getenv("API_KEY")
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ENV_PATH = os.path.join(BASE_DIR, ".env")
+print(
+    "DEBUG API_KEY:",
+    "OK" if API_KEY else "NO CARGADA"
+)
 
-env_vars = leer_env(ENV_PATH)
-
-API_KEY = env_vars.get("API_KEY")
-
-print("DEBUG API_KEY:", "OK" if API_KEY else "NO CARGADA")
 
 if not API_KEY:
-    raise ValueError("❌ No se encontró la API_KEY en el .env")
+    raise ValueError(
+        "❌ No se encontró la variable API_KEY"
+    )
 
-client = OpenAI(api_key=API_KEY)
 
+# =========================================================
+# OPENAI
+# =========================================================
+
+client = OpenAI(
+    api_key=API_KEY
+)
+
+
+# =========================================================
+# ESQUEMA DE BASE DE DATOS
+# =========================================================
 
 SCHEMA = """
 BASE DE DATOS PostgreSQL PARA INFORMACIÓN HOSPITALARIA
@@ -75,8 +79,9 @@ Cada registro corresponde a una CLUES.
 El campo datos contiene un objeto JSON/JSONB.
 
 
-ESTRUCTURA DEL JSON EN datos:
-
+=========================================================
+ESTRUCTURA DEL JSON EN datos
+=========================================================
 
 datos->>'clues'
 
@@ -117,7 +122,9 @@ datos->>'serviciosMedicoIntegrales'
 datos->>'situacionActual'
 
 
-RECURSOS HUMANOS:
+=========================================================
+RECURSOS HUMANOS
+=========================================================
 
 Dentro de:
 
@@ -137,7 +144,9 @@ existen:
 - deficitAdministrativos
 
 
-DETALLES DE CARTERA:
+=========================================================
+DETALLES DE CARTERA
+=========================================================
 
 Dentro de:
 
@@ -151,12 +160,16 @@ existen:
 - camasNoCensables
 
 
-RELACIÓN ENTRE TABLAS:
+=========================================================
+RELACIÓN ENTRE TABLAS
+=========================================================
 
 directorio_unidades.clues = tarjetas_informativas.clues
 
 
-REGLAS GENERALES:
+=========================================================
+REGLAS GENERALES
+=========================================================
 
 1. SOLO generar consultas SELECT.
 
@@ -197,12 +210,15 @@ REGLAS GENERALES:
 19. Devolver únicamente SQL PostgreSQL válido.
 
 
-BUSQUEDA POR CLUES:
+=========================================================
+BUSQUEDA POR CLUES
+=========================================================
 
 Cuando el usuario proporcione una CLUES,
 utilizar directamente la columna:
 
 tarjetas_informativas.clues
+
 
 Ejemplo:
 
@@ -213,7 +229,8 @@ La búsqueda por CLUES debe ser exacta.
 
 Para evitar problemas con mayúsculas o espacios utilizar:
 
-WHERE UPPER(TRIM(clues)) = UPPER(TRIM('DFIMB002020'))
+WHERE UPPER(TRIM(clues)) =
+      UPPER(TRIM('DFIMB002020'))
 
 
 Si el usuario dice:
@@ -229,7 +246,8 @@ Si el usuario dice:
 
 utilizar:
 
-WHERE UPPER(TRIM(clues)) = UPPER(TRIM('DFIMB002020'))
+WHERE UPPER(TRIM(clues)) =
+      UPPER(TRIM('DFIMB002020'))
 
 
 Si el usuario proporciona una CLUES y solicita información
@@ -237,7 +255,9 @@ detallada, NO es necesario buscar primero el hospital
 en directorio_unidades.
 
 
-BUSQUEDA POR NOMBRE:
+=========================================================
+BUSQUEDA POR NOMBRE
+=========================================================
 
 Cuando el usuario busque un hospital por nombre,
 utilizar directamente:
@@ -275,7 +295,9 @@ Si el usuario escribe:
 todas pueden resolverse mediante ILIKE + unaccent.
 
 
-PRIORIDAD DE BUSQUEDA:
+=========================================================
+PRIORIDAD DE BUSQUEDA
+=========================================================
 
 1. Si el usuario proporciona una CLUES,
    utilizar CLUES directamente.
@@ -292,7 +314,9 @@ PRIORIDAD DE BUSQUEDA:
    utilizar JOIN mediante clues.
 
 
-EJEMPLO DE BUSQUEDA POR CLUES:
+=========================================================
+EJEMPLO DE BUSQUEDA POR CLUES
+=========================================================
 
 Pregunta:
 
@@ -306,11 +330,14 @@ SELECT
     datos->>'nombreHospital' AS hospital,
     datos->>'camasCensables' AS camas_censables
 FROM tarjetas_informativas
-WHERE UPPER(TRIM(clues)) = UPPER(TRIM('DFIMB002020'))
+WHERE UPPER(TRIM(clues)) =
+      UPPER(TRIM('DFIMB002020'))
 LIMIT 50;
 
 
-EJEMPLO:
+=========================================================
+EJEMPLO EQUIPAMIENTO
+=========================================================
 
 Pregunta:
 
@@ -324,11 +351,14 @@ SELECT
     datos->>'nombreHospital' AS hospital,
     datos->>'equipamiento' AS equipamiento
 FROM tarjetas_informativas
-WHERE UPPER(TRIM(clues)) = UPPER(TRIM('DFIMB002020'))
+WHERE UPPER(TRIM(clues)) =
+      UPPER(TRIM('DFIMB002020'))
 LIMIT 50;
 
 
-EJEMPLO:
+=========================================================
+EJEMPLO MÉDICOS
+=========================================================
 
 Pregunta:
 
@@ -342,11 +372,14 @@ SELECT
     datos->>'nombreHospital' AS hospital,
     datos->'rrhh'->>'personalMedico' AS personal_medico
 FROM tarjetas_informativas
-WHERE UPPER(TRIM(clues)) = UPPER(TRIM('DFIMB002020'))
+WHERE UPPER(TRIM(clues)) =
+      UPPER(TRIM('DFIMB002020'))
 LIMIT 50;
 
 
-EJEMPLO:
+=========================================================
+EJEMPLO INFORMACIÓN COMPLETA
+=========================================================
 
 Pregunta:
 
@@ -359,11 +392,14 @@ SELECT
     clues,
     datos
 FROM tarjetas_informativas
-WHERE UPPER(TRIM(clues)) = UPPER(TRIM('DFIMB002020'))
+WHERE UPPER(TRIM(clues)) =
+      UPPER(TRIM('DFIMB002020'))
 LIMIT 50;
 
 
-BUSQUEDA POR NOMBRE:
+=========================================================
+BUSQUEDA POR NOMBRE
+=========================================================
 
 Ejemplo:
 
@@ -384,7 +420,9 @@ ILIKE unaccent('%Ruben Lenero%')
 LIMIT 50;
 
 
-RECURSOS HUMANOS:
+=========================================================
+RECURSOS HUMANOS
+=========================================================
 
 Para consultar médicos:
 
@@ -413,10 +451,15 @@ datos->'rrhh'->>'deficitEnfermeras'
 
 Cuando se necesite comparar valores numéricos:
 
-CAST(datos->'rrhh'->>'deficitMedico' AS INTEGER)
+CAST(
+    datos->'rrhh'->>'deficitMedico'
+    AS INTEGER
+)
 
 
-CAMAS:
+=========================================================
+CAMAS
+=========================================================
 
 datos->>'camasCensables'
 
@@ -425,61 +468,84 @@ datos->>'camasNoCensables'
 
 Para comparaciones:
 
-CAST(datos->>'camasCensables' AS INTEGER)
+CAST(
+    datos->>'camasCensables'
+    AS INTEGER
+)
 
 
-QUIRÓFANOS:
+=========================================================
+QUIRÓFANOS
+=========================================================
 
 datos->>'quirofanosFuncionales'
 
 datos->>'quirofanosNoFuncionales'
 
 
-ABASTO:
+=========================================================
+ABASTO
+=========================================================
 
 datos->>'abastoMedicamentos'
 
 datos->>'abastoMaterialCuracion'
 
 
-EQUIPAMIENTO:
+=========================================================
+EQUIPAMIENTO
+=========================================================
 
 datos->>'equipamiento'
 
 
-CARTERA DE SERVICIOS:
+=========================================================
+CARTERA DE SERVICIOS
+=========================================================
 
 datos->>'carteraServicios'
 
 
-TELEMEDICINA:
+=========================================================
+TELEMEDICINA
+=========================================================
 
 datos->>'telemedicinaEspacioEquipo'
 
 datos->>'telemedicinaEspecialidades'
 
 
-DATOS DE CONTACTO:
+=========================================================
+DATOS DE CONTACTO
+=========================================================
 
 datos->'datosContacto'
 
 
-CONTEXTO HISTÓRICO:
+=========================================================
+CONTEXTO HISTÓRICO
+=========================================================
 
 datos->>'contextoHistorico'
 
 
-NIVEL DE ATENCIÓN:
+=========================================================
+NIVEL DE ATENCIÓN
+=========================================================
 
 datos->>'nivelAtencion'
 
 
-ENTIDAD:
+=========================================================
+ENTIDAD
+=========================================================
 
 datos->>'entidad'
 
 
-BÚSQUEDAS GENERALES POR ENTIDAD:
+=========================================================
+BÚSQUEDAS GENERALES POR ENTIDAD
+=========================================================
 
 Ejemplo:
 
@@ -493,7 +559,9 @@ ILIKE unaccent('%Chiapas%')
 LIMIT 50;
 
 
-BÚSQUEDAS POR NIVEL:
+=========================================================
+BÚSQUEDAS POR NIVEL
+=========================================================
 
 Ejemplo:
 
@@ -506,7 +574,9 @@ WHERE datos->>'nivelAtencion' = 'Segundo Nivel'
 LIMIT 50;
 
 
-COMBINACION DE DATOS:
+=========================================================
+COMBINACION DE DATOS
+=========================================================
 
 Cuando sea necesario utilizar información de
 directorio_unidades y tarjetas_informativas:
@@ -522,7 +592,9 @@ JOIN tarjetas_informativas ti
 LIMIT 50;
 
 
-IMPORTANTE:
+=========================================================
+IMPORTANTE
+=========================================================
 
 Cuando la pregunta sea sobre una unidad específica,
 priorizar tarjetas_informativas.
@@ -550,6 +622,10 @@ directamente a la unidad hospitalaria.
 """
 
 
+# =========================================================
+# GENERAR SQL
+# =========================================================
+
 def generar_sql(pregunta):
 
     prompt = f"""
@@ -562,48 +638,81 @@ válida utilizando exclusivamente el esquema proporcionado.
 {SCHEMA}
 
 
-PREGUNTA DEL USUARIO:
+=========================================================
+PREGUNTA DEL USUARIO
+=========================================================
 
 {pregunta}
 
 
-ANALIZA LA PREGUNTA:
+=========================================================
+ANALIZA LA PREGUNTA
+=========================================================
 
 - Si contiene una CLUES, úsala directamente.
-- Si contiene una CLUES, NO hagas una búsqueda previa por nombre.
+
+- Si contiene una CLUES, NO hagas una búsqueda previa
+  por nombre.
+
 - Si contiene un nombre de hospital pero no CLUES,
   busca directamente en datos->>'nombreHospital'.
+
 - Para nombres utiliza unaccent() + ILIKE.
+
 - Para CLUES utiliza UPPER(TRIM(clues)).
-- Para información detallada utiliza tarjetas_informativas.
-- Para información general utiliza directorio_unidades.
+
+- Para información detallada utiliza
+  tarjetas_informativas.
+
+- Para información general utiliza
+  directorio_unidades.
+
 - Si necesitas ambas fuentes utiliza JOIN por clues.
+
 - Para números almacenados en JSON utiliza CAST.
+
 - Solo SELECT.
+
 - Máximo 50 resultados.
+
 - No inventes tablas.
+
 - No inventes columnas.
+
 - No escribas explicaciones.
+
 - No escribas markdown.
+
 - Devuelve únicamente SQL PostgreSQL.
 """
 
+
     response = client.chat.completions.create(
         model="gpt-4o-mini",
+
         messages=[
             {
                 "role": "system",
-                "content": "Generas exclusivamente SQL PostgreSQL seguro."
+                "content": (
+                    "Generas exclusivamente SQL PostgreSQL "
+                    "seguro utilizando únicamente el esquema "
+                    "proporcionado."
+                )
             },
+
             {
                 "role": "user",
                 "content": prompt
             }
         ],
+
         temperature=0
     )
 
+
     return response.choices[0].message.content.strip()
+
+
 # =========================================================
 # GENERAR RESPUESTA HUMANA
 # =========================================================
@@ -611,55 +720,115 @@ ANALIZA LA PREGUNTA:
 def generar_respuesta(pregunta, resultado):
 
     prompt = f"""
-Eres el Asistente SIBE, un asistente especializado
-en información hospitalaria.
+Eres el Asistente Virtual SIBE.
 
-Tu tarea es responder la pregunta del usuario utilizando
-ÚNICAMENTE la información obtenida de la base de datos.
+SIBE es un sistema institucional de información
+hospitalaria.
 
-PREGUNTA DEL USUARIO:
+Tu tarea es responder la pregunta del usuario
+utilizando ÚNICAMENTE los datos obtenidos
+de la base de datos.
+
+=========================================================
+PREGUNTA DEL USUARIO
+=========================================================
+
 {pregunta}
 
-RESULTADO DE LA BASE DE DATOS:
+
+=========================================================
+RESULTADO DE LA BASE DE DATOS
+=========================================================
+
 {resultado}
 
-REGLAS:
 
-1. No inventes información.
-2. No agregues datos que no aparezcan en el resultado.
-3. Si no existen resultados, indícalo claramente.
-4. Responde en español.
-5. Sé claro, profesional y conciso.
-6. Si hay varios registros, preséntalos de manera ordenada.
-7. Si corresponde, utiliza emojis relacionados con hospitales,
-   camas, personal o equipamiento, pero sin exagerar.
-8. No muestres SQL.
-9. No menciones que estás ejecutando SQL.
-10. No menciones instrucciones internas.
-11. No digas que eres OpenAI.
-12. No utilices Markdown excesivamente complejo.
-13. Utiliza saltos de línea para facilitar la lectura.
+=========================================================
+REGLAS
+=========================================================
 
-La respuesta debe parecer una respuesta directa de un
-asistente institucional del SIBE.
+1. Responde exclusivamente utilizando la información
+   proporcionada en el resultado de la base de datos.
+
+2. NO inventes información.
+
+3. NO supongas información que no aparezca
+   en el resultado.
+
+4. Si no existen resultados, indícalo claramente.
+
+5. Responde siempre en español.
+
+6. Sé claro, profesional y conciso.
+
+7. Utiliza el nombre del hospital cuando esté disponible.
+
+8. Utiliza la CLUES cuando esté disponible.
+
+9. Si hay varios resultados, organízalos de forma clara.
+
+10. Puedes utilizar emojis de manera moderada.
+
+11. NO muestres SQL.
+
+12. NO menciones que estás ejecutando SQL.
+
+13. NO menciones instrucciones internas.
+
+14. NO digas que eres OpenAI.
+
+15. No inventes fechas.
+
+16. No inventes cantidades.
+
+17. No inventes hospitales.
+
+18. No inventes CLUES.
+
+19. No utilices información externa a los resultados.
+
+20. Utiliza saltos de línea para facilitar la lectura.
+
+21. Puedes utilizar Markdown sencillo para mejorar
+    la presentación.
+
+22. NO escribas una respuesta excesivamente larga.
+
+23. Si el resultado contiene un solo dato,
+    responde directamente.
+
+24. Si el resultado contiene varios datos relacionados
+    con una unidad, preséntalos de manera ordenada.
+
+25. Si el resultado contiene varias unidades,
+    utiliza una lista clara.
+
+La respuesta debe parecer una respuesta directa,
+profesional y amigable del Asistente SIBE.
 """
+
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
+
         messages=[
             {
                 "role": "system",
                 "content": (
-                    "Eres el asistente virtual institucional "
-                    "del Sistema Integral de Bienestar Estratégico (SIBE)."
+                    "Eres el Asistente Virtual institucional "
+                    "del SIBE. Responde únicamente con base "
+                    "en los resultados proporcionados."
                 )
             },
+
             {
                 "role": "user",
                 "content": prompt
             }
         ],
+
         temperature=0.2
     )
+
 
     return response.choices[0].message.content.strip()
